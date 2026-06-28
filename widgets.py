@@ -3,6 +3,7 @@
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
 from kivy.graphics import Color, RoundedRectangle
@@ -28,6 +29,77 @@ def AButton(text="", **kwargs):
     kwargs.setdefault("font_name", theme.FONT_REGULAR)
     btn = Button(text=ar(text), **kwargs)
     return btn
+
+
+class ArabicTextInput(TextInput):
+    """
+    TextInput بدعم عرض عربي متصل وبترتيب صحيح، مع الحفاظ على النص الخام
+    (raw_text) كمصدر حقيقي للتخزين والحفظ.
+
+    لماذا هذا مطلوب: Kivy TextInput لا يطبّق reshaping/bidi على الإطلاق
+    (بعكس Label/Button عبر ALabel/AButton أعلاه). الكتابة العربية تظهر
+    بحروف منفصلة وبترتيب bidi خاطئ. هالفئة تحتفظ بالنص كما كتبه المستخدم
+    حرفيًا في self.raw_text، وتعيد تشكيله للعرض فقط في self.text — حتى لا
+    تُخزَّن أحرف الربط الخاصة (presentation forms) في البيانات المحفوظة.
+
+    استخدم .raw_text لقراءة/تهيئة القيمة الحقيقية، لا .text.
+    """
+
+    def __init__(self, **kwargs):
+        initial = kwargs.pop("text", "")
+        self.raw_text = initial
+        self._updating = False
+        super().__init__(text=ar(initial) if initial else "", **kwargs)
+        self.bind(focus=self._on_focus)
+
+    def insert_text(self, substring, from_undo=False):
+        if self._updating:
+            return super().insert_text(substring, from_undo=from_undo)
+        # نحسب موضع الإدراج بمقياس النص الخام (raw_text)، لا بمقياس النص
+        # المعروض المُعاد تشكيله (قد يختلف طوله/ترتيبه عن الخام).
+        cursor_col = self.cursor_col
+        # نستخدم نسبة موضع المؤشر داخل النص المعروض الحالي لتقدير موضع
+        # الإدراج بالنص الخام (تقريب كافٍ عمليًا لحقول إدخال قصيرة كاسم
+        # المدرسة/المدير، وهي حقول سطر واحد بلا تعديل معقّد).
+        display_before = self.text
+        raw_len = len(self.raw_text)
+        if len(display_before) > 0:
+            ratio = min(cursor_col / max(len(display_before), 1), 1.0)
+        else:
+            ratio = 1.0
+        raw_pos = round(ratio * raw_len)
+        raw_pos = max(0, min(raw_pos, raw_len))
+
+        self.raw_text = self.raw_text[:raw_pos] + substring + self.raw_text[raw_pos:]
+        self._refresh_display(cursor_target=raw_pos + len(substring))
+
+    def do_backspace(self, from_undo=False, mode="bkspc"):
+        if not self.raw_text:
+            return
+        cursor_col = self.cursor_col
+        display_len = max(len(self.text), 1)
+        ratio = min(cursor_col / display_len, 1.0)
+        raw_pos = round(ratio * len(self.raw_text))
+        raw_pos = max(0, min(raw_pos, len(self.raw_text)))
+        if raw_pos <= 0:
+            return
+        self.raw_text = self.raw_text[:raw_pos - 1] + self.raw_text[raw_pos:]
+        self._refresh_display(cursor_target=raw_pos - 1)
+
+    def _refresh_display(self, cursor_target=None):
+        self._updating = True
+        try:
+            self.text = ar(self.raw_text) if self.raw_text else ""
+            if cursor_target is not None:
+                target = max(0, min(cursor_target, len(self.text)))
+                self.cursor = (target, 0)
+        finally:
+            self._updating = False
+
+    def _on_focus(self, instance, value):
+        # إعادة عرض احتياطية عند فقد التركيز (مثلاً بعد لصق نص).
+        if not value:
+            self._refresh_display()
 
 
 def safe_chart_widget(build_fn, *args, **kwargs):

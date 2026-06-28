@@ -1,20 +1,6 @@
 # -*- coding: utf-8 -*-
 """تطبيق ميزان للجوال — نقطة التشغيل الرئيسية."""
 import os
-import tempfile
-
-# matplotlib يحاول عند أول استيراد بناء "font cache" ويكتبه في مجلد قابل
-# للكتابة. لو فشل بالعثور على مجلد صالح على أندرويد (صندوق التطبيق المعزول)
-# قد يتسبب بانهيار على مستوى native لا يلتقطه try/except في بايثون، فيظهر
-# للمستخدم كشاشة فاضية تمامًا بدون أي رسالة خطأ. نحدد مسارًا مضمون الكتابة
-# قبل أي استيراد لـ matplotlib بكل الملفات.
-_mpl_cache_dir = os.path.join(tempfile.gettempdir(), "mizan_mpl_cache")
-try:
-    os.makedirs(_mpl_cache_dir, exist_ok=True)
-    os.environ.setdefault("MPLCONFIGDIR", _mpl_cache_dir)
-except Exception:
-    pass
-
 from kivy.config import Config
 Config.set("graphics", "width", "412")
 Config.set("graphics", "height", "869")
@@ -194,18 +180,72 @@ class MizanMobileApp(App):
 
         self._request_android_permissions()
 
-        self.root_widget = RootWidget(self)
-        self._register_screens()
-        self.switch_screen("home")
-        return self.root_widget
+        try:
+            self.root_widget = RootWidget(self)
+            self._register_screens()
+            self.switch_screen("home")
+            return self.root_widget
+        except Exception as e:
+            # حماية نقطة الإقلاع نفسها: بدون هذا، أي فشل هنا (تحميل خط،
+            # استيراد matplotlib، إلخ) يؤدي لشاشة بيضاء فاضية صامتة بدون
+            # أي رسالة توضّح للمستخدم أو للمطوّر سبب المشكلة. نسجّل الخطأ
+            # كاملًا في log أندرويد (logcat) ونعرض شاشة خطأ مقروءة بدلها.
+            import traceback
+            traceback.print_exc()
+            return self._build_fatal_error_screen(e)
+
+    def _build_fatal_error_screen(self, error):
+        from kivy.uix.boxlayout import BoxLayout as _Box
+        from widgets import ALabel as _ALabel
+        box = _Box(orientation="vertical", padding=dp(24), spacing=dp(12))
+        box.add_widget(_ALabel(text="تعذّر تشغيل التطبيق", font_size="17sp",
+                                bold=True, halign="center",
+                                color=theme.hex_to_rgba(theme.COLOR_RED_FG),
+                                size_hint_y=None, height=dp(36)))
+        box.add_widget(_ALabel(text=str(error), font_size="11sp", halign="center",
+                                color=theme.hex_to_rgba(theme.COLOR_TEXT_SECONDARY)))
+        return box
 
     def _request_android_permissions(self):
+        # على أندرويد 10 وأقدم: صلاحيات READ/WRITE_EXTERNAL_STORAGE العادية كافية.
         try:
             from android.permissions import request_permissions, Permission
             request_permissions([
                 Permission.READ_EXTERNAL_STORAGE,
                 Permission.WRITE_EXTERNAL_STORAGE,
             ])
+        except Exception:
+            import traceback
+            traceback.print_exc()
+
+        # على أندرويد 11+ (API 30+): الصلاحيات العادية لا تكفي للوصول لملفات
+        # خارج مجلد التطبيق (Scoped Storage). MANAGE_EXTERNAL_STORAGE صلاحية
+        # "خاصة" لا تُمنح من نافذة الصلاحيات العادية، بل تحتاج توجيه المستخدم
+        # لشاشة نظام مخصصة عبر Intent. بدون هذا الاستدعاء، الإعلان عنها في
+        # buildozer.spec وحده لا يكفي ولن يُمنح التطبيق الصلاحية فعليًا.
+        self._request_manage_storage_if_needed()
+
+    def _request_manage_storage_if_needed(self):
+        try:
+            from jnius import autoclass
+            VERSION = autoclass("android.os.Build$VERSION")
+            if VERSION.SDK_INT < 30:
+                return  # Scoped Storage الصارم يبدأ من أندرويد 11 (API 30)
+
+            Environment = autoclass("android.os.Environment")
+            if Environment.isExternalStorageManager():
+                return  # الصلاحية ممنوحة مسبقًا
+
+            Intent = autoclass("android.content.Intent")
+            Settings = autoclass("android.provider.Settings")
+            Uri = autoclass("android.net.Uri")
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            activity = PythonActivity.mActivity
+
+            intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+            uri = Uri.fromParts("package", activity.getPackageName(), None)
+            intent.setData(uri)
+            activity.startActivity(intent)
         except Exception:
             import traceback
             traceback.print_exc()
