@@ -10,7 +10,7 @@ def build_empty_screen(message="لا توجد بيانات حتى الآن", hin
     box = BoxLayout(orientation="vertical", padding=dp(30), spacing=dp(10))
     box.add_widget(BoxLayout())
     box.add_widget(ALabel(text="📂", font_size="40sp", size_hint_y=None, height=dp(60),
-                           halign="center", font_name="Roboto"))
+                           halign="center"))
     box.add_widget(ALabel(text=message, font_size="15sp", bold=True,
                            size_hint_y=None, height=dp(28), halign="center"))
     box.add_widget(ALabel(text=hint, font_size="11sp",

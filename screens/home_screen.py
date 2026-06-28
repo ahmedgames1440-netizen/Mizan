@@ -196,8 +196,23 @@ def _pick_file(app, scroll_ref):
 
 
 def _process_file(app, filepath):
+    if not os.path.isfile(filepath):
+        _show_error(
+            "تعذّر الوصول للملف. هذا يحصل عادة لو صلاحية "
+            "\"الوصول لجميع الملفات\" غير مفعّلة لتطبيق ميزان.\n\n"
+            "فعّلها من: إعدادات الجهاز ← التطبيقات ← ميزان ← الأذونات "
+            "← الوصول إلى كل الملفات."
+        )
+        return
     try:
         students, fmt = parse_grades_file(filepath)
+    except PermissionError as e:
+        _show_error(
+            "لا توجد صلاحية كافية لقراءة هذا الملف.\n\n"
+            "فعّل صلاحية \"الوصول لجميع الملفات\" من: إعدادات الجهاز ← "
+            "التطبيقات ← ميزان ← الأذونات، ثم أعد المحاولة."
+        )
+        return
     except Exception as e:
         _show_error(f"تعذّر قراءة الملف:\n{e}")
         return
@@ -214,10 +229,10 @@ def _process_file(app, filepath):
 
 def _show_error(message):
     from kivy.uix.popup import Popup
-    from kivy.uix.label import Label
     popup = Popup(title=ar("خطأ"), content=ALabel(text=message, font_size="13sp"),
-                   size_hint=(0.8, 0.3))
+                   size_hint=(0.85, 0.4))
     popup.open()
+
 
 
 def _get_report_context(app):

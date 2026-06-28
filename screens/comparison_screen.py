@@ -44,7 +44,7 @@ def build_comparison_screen(app):
 def _build_upload_prompt(app):
     box = BoxLayout(orientation="vertical", spacing=dp(12), size_hint_y=None, height=dp(320))
     box.add_widget(ALabel(text="▤ ↔ ▤", font_size="30sp", halign="center",
-                           size_hint_y=None, height=dp(50), font_name="Roboto"))
+                           size_hint_y=None, height=dp(50)))
     box.add_widget(ALabel(text="قارن أداء الطلاب بين فصلين دراسيين", font_size="15sp", bold=True,
                            halign="center", size_hint_y=None, height=dp(30)))
     current_name = ""

@@ -2,12 +2,11 @@
 """شاشة إعدادات المدرسة الدائمة — تطبيق الجوال."""
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
-from kivy.uix.textinput import TextInput
 from kivy.uix.image import Image as KivyImage
 from kivy.metrics import dp
 
 import theme
-from widgets import ALabel, AButton, Card
+from widgets import ALabel, AButton, Card, ArabicTextInput
 from core.arabic_text import ar
 from core.school_settings import load_school_settings, save_school_settings
 
@@ -28,14 +27,14 @@ def build_settings_screen(app):
 
     card.body.add_widget(ALabel(text="اسم المدرسة / الإدارة", font_size="11sp",
                                   size_hint_y=None, height=dp(20)))
-    school_input = TextInput(text=saved.get("school_name", ""), font_name=theme.FONT_REGULAR,
+    school_input = ArabicTextInput(text=saved.get("school_name", ""), font_name=theme.FONT_REGULAR,
                               size_hint_y=None, height=dp(42), multiline=False,
                               halign="right", base_direction="rtl")
     card.body.add_widget(school_input)
 
     card.body.add_widget(ALabel(text="اسم مدير المدرسة", font_size="11sp",
                                   size_hint_y=None, height=dp(20)))
-    principal_input = TextInput(text=saved.get("principal_name", ""), font_name=theme.FONT_REGULAR,
+    principal_input = ArabicTextInput(text=saved.get("principal_name", ""), font_name=theme.FONT_REGULAR,
                                  size_hint_y=None, height=dp(42), multiline=False,
                                  halign="right", base_direction="rtl")
     card.body.add_widget(principal_input)
@@ -106,8 +105,8 @@ def build_settings_screen(app):
 
     def _save(*_args):
         save_school_settings(
-            school_name=school_input.text,
-            principal_name=principal_input.text,
+            school_name=school_input.raw_text,
+            principal_name=principal_input.raw_text,
             logo_path=state["logo_path"],
         )
         result_lbl.text = ar("✓ تم حفظ الإعدادات بنجاح")
