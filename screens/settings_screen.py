@@ -82,11 +82,11 @@ def build_settings_screen(app):
             filechooser.open_file(on_selection=_on_selection,
                                    filters=[("Images", "*.png", "*.jpg", "*.jpeg")])
         except Exception:
-            import os
             from kivy.uix.filechooser import FileChooserListView
             from kivy.uix.popup import Popup
+            from core.android_utils import default_filechooser_path
             chooser = FileChooserListView(filters=["*.png", "*.jpg", "*.jpeg"],
-                                           path=os.path.expanduser("~"))
+                                           path=default_filechooser_path())
             popup = Popup(title=ar("اختر صورة الشعار"), content=chooser, size_hint=(0.9, 0.9))
 
             def _on_submit(instance, selection, touch):

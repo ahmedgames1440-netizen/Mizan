@@ -192,8 +192,9 @@ class MizanMobileApp(App):
                 Permission.READ_EXTERNAL_STORAGE,
                 Permission.WRITE_EXTERNAL_STORAGE,
             ])
-        except ImportError:
-            pass
+        except Exception:
+            import traceback
+            traceback.print_exc()
 
     def _register_screens(self):
         from screens.home_screen import build_home_screen
@@ -234,11 +235,17 @@ class MizanMobileApp(App):
         screen.clear_widgets()
 
         builder = self._screen_builders.get(key)
-        if builder:
-            content = builder(self)
-        else:
-            from screens.empty_screen import build_placeholder_screen
-            content = build_placeholder_screen(key)
+        try:
+            if builder:
+                content = builder(self)
+            else:
+                from screens.empty_screen import build_placeholder_screen
+                content = build_placeholder_screen(key)
+        except Exception as e:
+            import traceback
+            from screens.empty_screen import build_empty_screen
+            traceback.print_exc()
+            content = build_empty_screen(message="حدث خطأ بتحميل الشاشة", hint=str(e))
         screen.add_widget(content)
         self.root_widget.sm.current = key
 

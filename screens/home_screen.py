@@ -176,11 +176,14 @@ def _pick_file(app, scroll_ref):
             filters=[("Excel files", "*.xlsx", "*.xls")],
         )
     except Exception:
+        import traceback
+        traceback.print_exc()
         # احتياط بيئة سطح المكتب/الاختبار: نافذة Kivy الأصلية لاختيار الملفات
         from kivy.uix.filechooser import FileChooserListView
         from kivy.uix.popup import Popup
 
-        chooser = FileChooserListView(filters=["*.xlsx", "*.xls"], path=os.path.expanduser("~"))
+        from core.android_utils import default_filechooser_path
+        chooser = FileChooserListView(filters=["*.xlsx", "*.xls"], path=default_filechooser_path())
         popup = Popup(title="اختر ملف نتائج", content=chooser, size_hint=(0.9, 0.9))
 
         def _on_submit(instance, selection, touch):

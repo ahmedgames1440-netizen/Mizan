@@ -80,7 +80,8 @@ def _pick_comparison_file(app):
         from kivy.uix.filechooser import FileChooserListView
         from kivy.uix.popup import Popup
 
-        chooser = FileChooserListView(filters=["*.xlsx", "*.xls"], path=os.path.expanduser("~"))
+        from core.android_utils import default_filechooser_path
+        chooser = FileChooserListView(filters=["*.xlsx", "*.xls"], path=default_filechooser_path())
         popup = Popup(title=ar("اختر ملف الفترة الثانية"), content=chooser, size_hint=(0.9, 0.9))
 
         def _on_submit(instance, selection, touch):
