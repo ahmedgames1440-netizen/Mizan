@@ -65,5 +65,11 @@ class ReportLabRecipe(CompiledComponentsPythonRecipe):
                     shutil.rmtree(ext_dir)
                     info('reportlab recipe: removed {} C source (incompatible with modern Python C API)'.format(ext_dirname))
 
+    def build_compiled_components(self, arch):
+        # بدون rl_accel/renderPM ما عاد فيه أي C extension يُبنى؛ setup.py build_ext
+        # ما عاد يُنشئ مجلد build/lib.* أصلًا، والكود الأصلي بـ p4a يفترض وجوده
+        # دائمًا فيفشل بـ IndexError. نتجاوز خطوة بناء الإكستنشن بالكامل.
+        info('reportlab recipe: no C extensions left to build, skipping build_ext')
+
 
 recipe = ReportLabRecipe()
