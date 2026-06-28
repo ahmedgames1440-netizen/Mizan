@@ -26,6 +26,8 @@ android.archs = arm64-v8a, armeabi-v7a
 
 android.allow_backup = True
 
+p4a.local_recipes = %(source.dir)s/p4a-recipes
+
 [buildozer]
 log_level = 2
 warn_on_root = 1
