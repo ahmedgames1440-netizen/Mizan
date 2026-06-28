@@ -9,7 +9,7 @@ source.include_patterns = assets/fonts/*.ttf,core/*.py,screens/*.py
 
 version = 1.0
 
-requirements = python3,kivy==2.3.1,openpyxl,reportlab,arabic-reshaper,python-bidi,plyer,pillow,numpy,matplotlib,freetype,setuptools,cycler,python-dateutil,kiwisolver,pyparsing,six,packaging
+requirements = python3,kivy==2.3.1,openpyxl,reportlab,arabic-reshaper,python-bidi,plyer,pillow,numpy==1.23.2,matplotlib==3.7.1,freetype,setuptools,cycler,python-dateutil,kiwisolver,pyparsing,six,packaging
 
 orientation = portrait
 fullscreen = 0
