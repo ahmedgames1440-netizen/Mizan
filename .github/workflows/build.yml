@@ -33,13 +33,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.buildozer
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-global-${{ hashFiles('buildozer.spec', 'p4a-recipes/**') }}
 
       - name: Cache buildozer local dir
         uses: actions/cache@v4
         with:
           path: .buildozer
-          key: buildozer-local-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-local-${{ hashFiles('buildozer.spec', 'p4a-recipes/**') }}
 
       - name: Build APK with buildozer
         run: |

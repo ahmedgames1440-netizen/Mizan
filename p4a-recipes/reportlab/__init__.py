@@ -55,11 +55,15 @@ class ReportLabRecipe(CompiledComponentsPythonRecipe):
                     with open('setup.py', 'w') as f:
                         f.write(text)
 
-            # يعطّل مسرّع C (rl_accel) لأنه لا يبني على بايثون 3.12+/أندرويد
-            rl_accel_dir = os.path.join(recipe_dir, "src", "rl_addons", "rl_accel")
-            if os.path.isdir(rl_accel_dir):
-                shutil.rmtree(rl_accel_dir)
-                info('reportlab recipe: removed rl_accel C source (incompatible with modern Python C API)')
+            # يعطّل امتدادات C القديمة (rl_accel, renderPM) لأنها لا تبني على
+            # بايثون 3.12+/أندرويد (تستخدم Unicode C API أُزيل من بايثون).
+            # كلاهما اختياري وريبورت لاب يرجع تلقائيًا لتنفيذ بايثون خالص بدونهما.
+            # renderPM غير مستخدم بالتطبيق أصلًا (لا تحويل رسومات لصور raster).
+            for ext_dirname in ("rl_accel", "renderPM"):
+                ext_dir = os.path.join(recipe_dir, "src", "rl_addons", ext_dirname)
+                if os.path.isdir(ext_dir):
+                    shutil.rmtree(ext_dir)
+                    info('reportlab recipe: removed {} C source (incompatible with modern Python C API)'.format(ext_dirname))
 
 
 recipe = ReportLabRecipe()
