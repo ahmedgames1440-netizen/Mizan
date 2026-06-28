@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*-
 """تطبيق ميزان للجوال — نقطة التشغيل الرئيسية."""
 import os
+import tempfile
+
+# matplotlib يحاول عند أول استيراد بناء "font cache" ويكتبه في مجلد قابل
+# للكتابة. لو فشل بالعثور على مجلد صالح على أندرويد (صندوق التطبيق المعزول)
+# قد يتسبب بانهيار على مستوى native لا يلتقطه try/except في بايثون، فيظهر
+# للمستخدم كشاشة فاضية تمامًا بدون أي رسالة خطأ. نحدد مسارًا مضمون الكتابة
+# قبل أي استيراد لـ matplotlib بكل الملفات.
+_mpl_cache_dir = os.path.join(tempfile.gettempdir(), "mizan_mpl_cache")
+try:
+    os.makedirs(_mpl_cache_dir, exist_ok=True)
+    os.environ.setdefault("MPLCONFIGDIR", _mpl_cache_dir)
+except Exception:
+    pass
+
 from kivy.config import Config
 Config.set("graphics", "width", "412")
 Config.set("graphics", "height", "869")
