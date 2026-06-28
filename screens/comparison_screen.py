@@ -66,11 +66,13 @@ def _build_upload_prompt(app):
 
 def _pick_comparison_file(app):
     try:
+        from kivy.clock import Clock
         from plyer import filechooser
 
         def _on_selection(selection):
+            # كول-باك أندرويد يصل من خيط غير خيط Kivy — لازم تأجيله.
             if selection:
-                _process_comparison_file(app, selection[0])
+                Clock.schedule_once(lambda dt: _process_comparison_file(app, selection[0]))
 
         filechooser.open_file(on_selection=_on_selection, filters=[("Excel files", "*.xlsx", "*.xls")])
     except Exception:

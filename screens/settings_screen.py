@@ -72,8 +72,14 @@ def build_settings_screen(app):
 
     def _pick_logo(*_args):
         try:
+            from kivy.clock import Clock
             from plyer import filechooser
-            filechooser.open_file(on_selection=_on_logo_picked,
+
+            def _on_selection(selection):
+                # كول-باك أندرويد يصل من خيط غير خيط Kivy — لازم تأجيله.
+                Clock.schedule_once(lambda dt: _on_logo_picked(selection))
+
+            filechooser.open_file(on_selection=_on_selection,
                                    filters=[("Images", "*.png", "*.jpg", "*.jpeg")])
         except Exception:
             import os

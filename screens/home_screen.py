@@ -162,11 +162,14 @@ def _build_notes(analysis):
 def _pick_file(app, scroll_ref):
     """يفتح منتقي ملفات (متوافق مع أندرويد عبر plyer، مع احتياط لسطح المكتب)."""
     try:
+        from kivy.clock import Clock
         from plyer import filechooser
 
         def _on_selection(selection):
+            # يصل هذا الكول-باك من خيط نظام أندرويد، لا خيط Kivy — يجب
+            # تأجيل أي كود يلمس الواجهة لخيط Kivy الرئيسي وإلا يفشل بصمت.
             if selection:
-                _process_file(app, selection[0])
+                Clock.schedule_once(lambda dt: _process_file(app, selection[0]))
 
         filechooser.open_file(
             on_selection=_on_selection,

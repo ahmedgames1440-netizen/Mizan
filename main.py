@@ -178,10 +178,22 @@ class MizanMobileApp(App):
         self.comparison = None
         self.current_screen_key = "home"
 
+        self._request_android_permissions()
+
         self.root_widget = RootWidget(self)
         self._register_screens()
         self.switch_screen("home")
         return self.root_widget
+
+    def _request_android_permissions(self):
+        try:
+            from android.permissions import request_permissions, Permission
+            request_permissions([
+                Permission.READ_EXTERNAL_STORAGE,
+                Permission.WRITE_EXTERNAL_STORAGE,
+            ])
+        except ImportError:
+            pass
 
     def _register_screens(self):
         from screens.home_screen import build_home_screen
