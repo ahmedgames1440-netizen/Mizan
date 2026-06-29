@@ -1,0 +1,86 @@
+name: Build iOS App
+
+# يبني نسخة أساسية من ميزان لـ iOS عبر kivy-ios على macOS runner.
+# هذي النسخة الأولى لا تتضمن matplotlib/reportlab (الرسوم البيانية وتصدير
+# PDF) لأن هذي المكتبات غير مدعومة بشكل مستقر حاليًا في kivy-ios — راجع
+# core/optional_deps.py لمعرفة كيف يتعامل الكود مع غيابها بأمان.
+#
+# الناتج: مشروع Xcode جاهز (غير موقّع) يُرفع كـ artifact. لتثبيته على آيفون
+# حقيقي، حمّل الـ artifact وافتحه على Mac بـ Xcode، اختر فريقك (Apple ID
+# مجاني يكفي)، وثبّته مباشرة بتوصيل الآيفون بكيبل.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build-ios.yml'
+      - 'ios_main.py'
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          brew install autoconf automake libtool pkg-config
+          brew link libtool || true
+
+      - name: Install kivy-ios + Cython
+        run: |
+          python3 -m pip install --upgrade pip
+          # Cython 3.x غير متوافق مع أغلب recipes الحالية بـ kivy-ios، نثبّت نسخة مثبّتة معروفة التوافق.
+          python3 -m pip install "cython<3.0" kivy-ios
+
+      - name: Cache kivy-ios toolchain build
+        uses: actions/cache@v4
+        with:
+          path: .kivy-ios-dist
+          key: kivy-ios-dist-${{ runner.os }}-${{ hashFiles('ios_requirements.txt') }}
+
+      - name: Build core toolchain (python3 + kivy)
+        run: |
+          mkdir -p .kivy-ios-dist
+          cd .kivy-ios-dist
+          toolchain build python3 kivy
+
+      - name: Build required pure/binary recipes
+        run: |
+          cd .kivy-ios-dist
+          # المكتبات الأساسية المطلوبة للنسخة الأولى (بدون matplotlib/reportlab/numpy).
+          # openpyxl/arabic_reshaper/python-bidi مكتبات بايثون خالصة، تُثبّت عبر pip
+          # داخل بيئة hostpython3 الخاصة بـ kivy-ios مباشرة بدون الحاجة لـ recipe مخصص.
+          toolchain pip install openpyxl arabic-reshaper python-bidi plyer
+
+      - name: Create Xcode project
+        run: |
+          cd .kivy-ios-dist
+          toolchain create Mizan "$GITHUB_WORKSPACE"
+
+      - name: Archive Xcode project (unsigned)
+        run: |
+          cd .kivy-ios-dist/Mizan-ios
+          xcodebuild -project Mizan.xcodeproj \
+            -scheme Mizan \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            -archivePath "$GITHUB_WORKSPACE/Mizan.xcarchive" \
+            archive
+
+      - name: Upload Xcode project + archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: mizan-ios-xcodeproj
+          path: |
+            .kivy-ios-dist/Mizan-ios
+            Mizan.xcarchive
+          retention-days: 14
