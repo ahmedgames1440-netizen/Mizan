@@ -4,17 +4,12 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.metrics import dp
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+from core.optional_deps import plt, HAS_CHARTS
 
 import theme
 from widgets import Card, safe_chart_widget
 from core.arabic_text import ar
 from screens.home_screen import _fig_to_kivy_image
-
-plt.rcParams["font.family"] = "DejaVu Sans"
-plt.rcParams["axes.unicode_minus"] = False
 
 
 def build_subjects_screen(app):

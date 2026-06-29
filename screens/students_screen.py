@@ -55,6 +55,10 @@ def build_students_screen(app):
 def _export_student_report(app, student):
     """يصدّر تقرير PDF لطالب واحد ويحفظه بمجلد بيانات التطبيق (قابل للمشاركة)."""
     import os
+    from core.optional_deps import HAS_PDF, UNAVAILABLE_PDF_MESSAGE
+    if not HAS_PDF:
+        _show_success(UNAVAILABLE_PDF_MESSAGE)
+        return
     from core.pdf_engine import ReportContext
     from core.pdf_report import export_single_student_report
     from core.school_settings import load_school_settings

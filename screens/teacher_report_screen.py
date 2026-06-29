@@ -5,18 +5,13 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import Spinner
 from kivy.metrics import dp
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+from core.optional_deps import plt, HAS_CHARTS
 
 import theme
 from widgets import ALabel, KPICard, Card, build_table, safe_chart_widget
 from core.arabic_text import ar
 from core.grade_colors import get_grade_color, grade_sort_key
 from screens.home_screen import _fig_to_kivy_image
-
-plt.rcParams["font.family"] = "DejaVu Sans"
-plt.rcParams["axes.unicode_minus"] = False
 
 
 def build_teacher_report_screen(app):

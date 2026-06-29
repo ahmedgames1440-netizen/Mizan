@@ -8,9 +8,7 @@ from kivy.uix.image import Image as KivyImage
 from kivy.core.image import Image as CoreImage
 from kivy.metrics import dp
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+from core.optional_deps import plt, HAS_CHARTS
 
 import theme
 from widgets import ALabel, AButton, Card, KPICard, safe_chart_widget
@@ -18,9 +16,6 @@ from core.arabic_text import ar
 from core.grade_colors import get_grade_color, grade_sort_key
 from core.parser import parse_grades_file, FORMAT_UNKNOWN
 from core.analysis import AnalysisResult
-
-plt.rcParams["font.family"] = "DejaVu Sans"
-plt.rcParams["axes.unicode_minus"] = False
 
 
 def _fig_to_kivy_image(fig, **kwargs):
@@ -259,10 +254,14 @@ def _output_dir(app):
 
 
 def _export_full_report(app):
-    from core.pdf_report import export_full_report
+    from core.optional_deps import HAS_PDF, UNAVAILABLE_PDF_MESSAGE
+    if not HAS_PDF:
+        _show_error(UNAVAILABLE_PDF_MESSAGE)
+        return
     ctx = _get_report_context(app)
     out_path = os.path.join(_output_dir(app), "تقرير_شامل.pdf")
     try:
+        from core.pdf_report import export_full_report
         export_full_report(out_path, ctx, app.analysis)
         _show_success(f"تم حفظ التقرير الشامل:\n{out_path}")
     except Exception as e:
@@ -270,10 +269,14 @@ def _export_full_report(app):
 
 
 def _export_certificates(app):
-    from core.certificates import export_top_students_certificates
+    from core.optional_deps import HAS_PDF, UNAVAILABLE_PDF_MESSAGE
+    if not HAS_PDF:
+        _show_error(UNAVAILABLE_PDF_MESSAGE)
+        return
     ctx = _get_report_context(app)
     out_path = os.path.join(_output_dir(app), "شهادات_التكريم.pdf")
     try:
+        from core.certificates import export_top_students_certificates
         export_top_students_certificates(out_path, ctx, app.analysis, top_n=3, scope="class")
         _show_success(f"تم حفظ شهادات التكريم:\n{out_path}")
     except Exception as e:

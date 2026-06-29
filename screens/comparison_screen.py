@@ -4,9 +4,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.metrics import dp
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+from core.optional_deps import plt, HAS_CHARTS
 
 import theme
 from widgets import ALabel, AButton, KPICard, Card, build_table, safe_chart_widget
@@ -15,9 +13,6 @@ from core.comparison import ComparisonResult
 from core.parser import parse_grades_file, FORMAT_UNKNOWN
 from core.analysis import AnalysisResult
 from screens.home_screen import _fig_to_kivy_image
-
-plt.rcParams["font.family"] = "DejaVu Sans"
-plt.rcParams["axes.unicode_minus"] = False
 
 
 def build_comparison_screen(app):
