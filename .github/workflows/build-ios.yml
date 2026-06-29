@@ -68,8 +68,19 @@ jobs:
       - name: Archive Xcode project (unsigned)
         run: |
           cd .kivy-ios-dist/Mizan-ios
-          xcodebuild -project Mizan.xcodeproj \
-            -scheme Mizan \
+          # toolchain create قد يولّد اسم ملف .xcodeproj بحروف مختلفة عن
+          # الاسم الممرر له (مثلاً "mizan.xcodeproj" بحروف صغيرة)، ونفس
+          # الشيء بالنسبة لاسم الـ scheme الداخلي. نكتشف الاسم الفعلي
+          # تلقائيًا بدل افتراض ثابت كان يسبب فشل "scheme not found".
+          PROJECT_PATH=$(find . -maxdepth 1 -name "*.xcodeproj" | head -n 1)
+          echo "Found project: $PROJECT_PATH"
+
+          SCHEME_NAME=$(xcodebuild -list -project "$PROJECT_PATH" -json | \
+            python3 -c "import json,sys; print(json.load(sys.stdin)['project']['schemes'][0])")
+          echo "Found scheme: $SCHEME_NAME"
+
+          xcodebuild -project "$PROJECT_PATH" \
+            -scheme "$SCHEME_NAME" \
             -configuration Release \
             -sdk iphoneos \
             CODE_SIGNING_ALLOWED=NO \
