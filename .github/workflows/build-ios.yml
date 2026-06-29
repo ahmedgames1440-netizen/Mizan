@@ -60,10 +60,28 @@ jobs:
           # داخل بيئة hostpython3 الخاصة بـ kivy-ios مباشرة بدون الحاجة لـ recipe مخصص.
           toolchain pip install openpyxl arabic-reshaper python-bidi plyer
 
+      - name: Stage clean app source (exclude build cache)
+        run: |
+          # toolchain create يحزم أي شيء موجود داخل المجلد المُمرَّر له كمصدر
+          # التطبيق. تمريره $GITHUB_WORKSPACE مباشرة كان يُدخل مجلد
+          # .kivy-ios-dist نفسه (بما فيه مكتبة بايثون القياسية الكاملة، ومنها
+          # Lib/test التي تحتوي عمدًا على ملفات بها أخطاء صياغة لاختبار
+          # المحلل اللغوي) داخل تطبيقنا. هذا يجعل خطوة compileall أثناء
+          # الأرشفة تفشل بكود خروج غير صفري رغم أن كود التطبيق نفسه سليم.
+          # نبني هنا نسخة نظيفة من مصدر التطبيق فقط (بدون .git/.github/.kivy-ios-dist)
+          # ونمررها لـ toolchain create بدل مجلد العمل كامل.
+          rm -rf "$RUNNER_TEMP/mizan-app-src"
+          mkdir -p "$RUNNER_TEMP/mizan-app-src"
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.kivy-ios-dist' \
+            "$GITHUB_WORKSPACE/" "$RUNNER_TEMP/mizan-app-src/"
+
       - name: Create Xcode project
         run: |
           cd .kivy-ios-dist
-          toolchain create Mizan "$GITHUB_WORKSPACE"
+          toolchain create Mizan "$RUNNER_TEMP/mizan-app-src"
 
       - name: Fix deployment target
         run: |
