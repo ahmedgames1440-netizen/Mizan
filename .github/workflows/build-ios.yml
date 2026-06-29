@@ -65,6 +65,16 @@ jobs:
           cd .kivy-ios-dist
           toolchain create Mizan "$GITHUB_WORKSPACE"
 
+      - name: Fix deployment target
+        run: |
+          cd .kivy-ios-dist/Mizan-ios
+          PROJECT_PATH=$(find . -maxdepth 1 -name "*.xcodeproj" | head -n 1)
+          # toolchain create يضبط IPHONEOS_DEPLOYMENT_TARGET = 9.0 افتراضيًا،
+          # وهذي قيمة أقدم من أدنى حد مدعوم حاليًا (12.0) وسترفضها Apple
+          # عند أي محاولة توزيع فعلية لاحقًا. نرفعها لقيمة حديثة مقبولة.
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.0;/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' \
+            "$PROJECT_PATH/project.pbxproj"
+
       - name: Archive Xcode project (unsigned)
         run: |
           cd .kivy-ios-dist/Mizan-ios
@@ -79,6 +89,23 @@ jobs:
             python3 -c "import json,sys; print(json.load(sys.stdin)['project']['schemes'][0])")
           echo "Found scheme: $SCHEME_NAME"
 
+          # خطأ معروف في kivy-ios: خطوة "Run Script" بمشروع Xcode تحاول
+          # عبر rsync نسخ ملف مثال افتراضي (faust_github.jpg) من توزيعة
+          # kivy-ios نفسها — ملف غير موجود فعليًا فيفشل rsync بـ "file has
+          # vanished" (exit code 24) ويُسقط المحاولة الأولى للأرشفة، رغم
+          # أن ملفات تطبيقنا الحقيقية تُنسخ بنجاح أثناء هذي المحاولة. على
+          # المحاولة الثانية يكون النسخ غير تفاضلي (لا يعيد محاولة نسخ
+          # الملف الوهمي) فينجح البناء فعليًا. لذلك نسمح بفشل أول محاولة
+          # ونعيد المحاولة مباشرة.
+          xcodebuild -project "$PROJECT_PATH" \
+            -scheme "$SCHEME_NAME" \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            -archivePath "$GITHUB_WORKSPACE/Mizan.xcarchive" \
+            archive || true
+
+          echo "=== Retrying archive (expected to succeed this time) ==="
           xcodebuild -project "$PROJECT_PATH" \
             -scheme "$SCHEME_NAME" \
             -configuration Release \
