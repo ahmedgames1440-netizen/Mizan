@@ -207,6 +207,10 @@ class MizanMobileApp(App):
         return box
 
     def _request_android_permissions(self):
+        from kivy.utils import platform
+        if platform != "android":
+            return  # هذا المنطق خاص بنظام صلاحيات أندرويد فقط (Scoped Storage).
+
         # على أندرويد 10 وأقدم: صلاحيات READ/WRITE_EXTERNAL_STORAGE العادية كافية.
         try:
             from android.permissions import request_permissions, Permission

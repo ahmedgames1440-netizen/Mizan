@@ -104,10 +104,18 @@ class ArabicTextInput(TextInput):
 
 def safe_chart_widget(build_fn, *args, **kwargs):
     """
-    يستدعي دالة بناء رسم بياني (تستخدم matplotlib) بأمان. لو فشلت (مثلاً
-    matplotlib غير متاح بشكل صحيح على بعض أجهزة أندرويد)، يرجع تنبيه نصي
-    بدل تعطّل الشاشة كاملة. استخدم هذا الغلاف بكل مكان يُبنى فيه رسم بياني.
+    يستدعي دالة بناء رسم بياني (تستخدم matplotlib) بأمان. لو matplotlib غير
+    متاح على هذي المنصة (مثلاً iOS حاليًا) أو فشل التنفيذ لأي سبب آخر،
+    يرجع تنبيه نصي بدل تعطّل الشاشة كاملة. استخدم هذا الغلاف بكل مكان يُبنى
+    فيه رسم بياني.
     """
+    from core.optional_deps import HAS_CHARTS, UNAVAILABLE_CHARTS_MESSAGE
+    if not HAS_CHARTS:
+        box = ColoredBoxLayout(bg_hex="#FFF6E5", radius=dp(8), padding=dp(10),
+                                size_hint_y=None, height=dp(60))
+        box.add_widget(ALabel(text=UNAVAILABLE_CHARTS_MESSAGE, font_size="10sp",
+                               color=theme.hex_to_rgba(theme.COLOR_GOLD_FG)))
+        return box
     try:
         return build_fn(*args, **kwargs)
     except Exception as e:
